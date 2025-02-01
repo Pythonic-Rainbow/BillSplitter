@@ -4,26 +4,34 @@ namespace BillSplitter
 {
     internal class BillStore : IDisposable
     {
-        private readonly SqliteConnection conn;
+        private readonly SqliteConnection _conn;
 
         internal BillStore(string file)
         {
-            conn = new($"Data Source={file};Foreign Keys=True");
-            conn.Open();
+            _conn = new($"Data Source={file};Foreign Keys=True");
+            _conn.Open();
         }
 
-        internal int AddBill(string starter, string name)
+        internal long AddBill(string starter, string name)
         {
-            var cmd = conn.CreateCommand();
+            var cmd = _conn.CreateCommand();
             cmd.CommandText = "INSERT INTO Bill VALUES ($starter, $name)";
             cmd.Parameters.AddWithValue("$starter", starter);
             cmd.Parameters.AddWithValue("$name", name);
-            return cmd.ExecuteNonQuery();
+            cmd.ExecuteNonQuery();
+            return GetLastInsertRowId();
+        }
+
+        private long GetLastInsertRowId()
+        {
+            var cmd = _conn.CreateCommand();
+            cmd.CommandText = "SELECT last_insert_rowid()";
+            return (long)cmd.ExecuteScalar()!;
         }
 
         public void Dispose()
         {
-            conn.Close();
+            _conn.Close();
         }
     }
 }
